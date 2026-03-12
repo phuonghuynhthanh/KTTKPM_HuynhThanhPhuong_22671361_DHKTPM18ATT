@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2022" /* Phiên bản ECMAScript đầu ra */,
+    "module": "commonjs" /* Hệ thống module */,
+    "rootDir": "./src" /* Thư mục chứa mã nguồn TypeScript */,
+    "outDir": "./dist" /* Thư mục chứa mã JavaScript sau khi build */,
+    "strict": true /* Bật tất cả các kiểm tra kiểu nghiêm ngặt */,
+    "esModuleInterop": true /* Hỗ trợ import các CommonJS modules */,
+    "skipLibCheck": true /* Bỏ qua kiểm tra kiểu trong các file .d.ts */,
+    "forceConsistentCasingInFileNames": true /* Phân biệt chữ hoa/chữ thường trong tên file */
+  }
+}
