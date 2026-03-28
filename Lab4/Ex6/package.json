@@ -1,0 +1,8 @@
+{
+  "name": "multi-stage-node",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo build step (optional)",
+    "start": "node app.js"
+  }
+}
