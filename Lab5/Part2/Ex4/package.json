@@ -1,0 +1,12 @@
+{
+  "name": "lab5-ex4-node-compose",
+  "version": "1.0.0",
+  "description": "Simple Node.js Express app with Docker Compose",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

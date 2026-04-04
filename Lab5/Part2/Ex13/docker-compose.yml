@@ -1,0 +1,8 @@
+services:
+  react-nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ex13-react-nginx
+    ports:
+      - "3000:80"

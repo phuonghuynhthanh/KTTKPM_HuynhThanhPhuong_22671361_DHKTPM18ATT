@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis
+    container_name: redis-limited
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
