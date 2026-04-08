@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django + Celery + Redis Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .services {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .service-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .service-badge.celery { background: #fff3e0; color: #e65100; }
+        .service-badge.redis { background: #fce4ec; color: #c62828; }
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; transform: translateY(-2px); }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; transform: translateY(-2px); }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-warning:hover { background: #e0a800; transform: translateY(-2px); }
+        #status {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            display: none;
+        }
+        #status.show { display: block; }
+        .status-header {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Django + Celery + Redis</h1>
+            <p class="subtitle">Kiến trúc xử lý task bất đồng bộ với message queue</p>
+            
+            <div class="services">
+                <span class="service-badge">Django 4.x</span>
+                <span class="service-badge celery">Celery Worker</span>
+                <span class="service-badge redis">Redis Broker</span>
+            </div>
+            
+            <div class="actions">
+                <button class="btn-primary" onclick="runTask('long')">Long Task (10s)</button>
+                <button class="btn-success" onclick="runTask('notification')">Send Notification</button>
+                <button class="btn-warning" onclick="runTask('report')">Generate Report</button>
+                <button class="btn-secondary" onclick="checkCelery()">Check Celery Status</button>
+            </div>
+            
+            <div id="status">
+                <div class="status-header">Task Status:</div>
+                <span id="status-content"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+
+        async function runTask(type) {
+            try {
+                const response = await fetch(`/tasks/run/?type=${type}`);
+                const data = await response.json();
+                currentTaskId = data.task_id;
+                showStatus(`Task submitted!\nID: ${data.task_id}\nStatus: ${data.status}`);
+                checkStatus(data.task_id);
+            } catch (error) {
+                showStatus(`Error: ${error.message}`);
+            }
+        }
+
+        async function checkStatus(taskId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/tasks/status/${taskId}/`);
+                    const data = await response.json();
+                    showStatus(`Task ID: ${taskId}\nStatus: ${data.status}\n${data.result ? 'Result: ' + JSON.stringify(data.result) : ''}${data.progress ? 'Progress: ' + JSON.stringify(data.progress) : ''}`);
+                    if (data.status === 'SUCCESS' || data.status === 'FAILURE') {
+                        clearInterval(interval);
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    showStatus(`Error checking status: ${error.message}`);
+                }
+            }, 1000);
+        }
+
+        async function checkCelery() {
+            const taskId = currentTaskId || 'demo';
+            try {
+                const response = await fetch(`/tasks/status/${taskId}/`);
+                const data = await response.json();
+                showStatus(`Celery Connection Check\nTask ID: ${taskId}\nStatus: ${data.status}\nConnection: OK`);
+            } catch (error) {
+                showStatus(`Connection Error: ${error.message}`);
+            }
+        }
+
+        function showStatus(message) {
+            const statusDiv = document.getElementById('status');
+            const contentSpan = document.getElementById('status-content');
+            contentSpan.textContent = message;
+            statusDiv.classList.add('show');
+        }
+    </script>
+</body>
+</html>

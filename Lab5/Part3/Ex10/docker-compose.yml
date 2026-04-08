@@ -1,0 +1,73 @@
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: ex10-traefik
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`traefik.localhost`)
+      - traefik.http.routers.traefik.entrypoints=web
+      - traefik.http.routers.traefik.service=api@internal
+
+  flask-app:
+    build:
+      context: ./flask
+      dockerfile: Dockerfile
+    container_name: ex10-flask
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.flask.rule=Host(`flask.localhost`)
+      - traefik.http.routers.flask.entrypoints=web
+      - traefik.http.services.flask.loadbalancer.server.port=5000
+
+  wordpress:
+    image: wordpress:6.5-apache
+    container_name: ex10-wordpress
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+      WORDPRESS_DB_NAME: wordpress
+    depends_on:
+      - mariadb
+    networks:
+      - web
+      - db
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wordpress.rule=Host(`wp.localhost`)
+      - traefik.http.routers.wordpress.entrypoints=web
+      - traefik.http.services.wordpress.loadbalancer.server.port=80
+
+  mariadb:
+    image: mariadb:11.4
+    container_name: ex10-mariadb
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wpuser
+      MARIADB_PASSWORD: wppass
+      MARIADB_ROOT_PASSWORD: rootpass
+    volumes:
+      - wp_db_data:/var/lib/mysql
+    networks:
+      - db
+
+networks:
+  web:
+    driver: bridge
+  db:
+    driver: bridge
+
+volumes:
+  wp_db_data:
